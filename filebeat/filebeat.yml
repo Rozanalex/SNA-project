@@ -1,0 +1,27 @@
+filebeat.inputs:
+  - type: filestream
+    id: suricata-logs
+    paths:
+      - /var/log/suricata/eve.json  # Путь внутри контейнера Filebeat (проброшенный volume из Suricata)
+    json.keys_under_root: true      # Говорим, что это JSON
+    json.add_error_key: true
+    fields:
+      suricata_source: suricata
+    fields_under_root: false
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  index: "suricata-%{+yyyy.MM.dd}"
+
+setup.ilm.enabled: false  # можно включить, если хотите ILM (Lifecycle Management)
+
+# Опционально - включить вывод в stdout (для отладки)
+logging.to_files: false
+logging.to_stdout: true
+logging.level: info
+
+# ---------------------------------
+# Template settings (для кастомного index.name)
+# ---------------------------------
+setup.template.name: "suricata"
+setup.template.pattern: "suricata-*"

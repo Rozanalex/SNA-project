@@ -1,0 +1,57 @@
+{
+  "uid": "suricata-overview",
+  "title": "Suricata IDS Overview",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Alerts per Minute",
+      "type": "graph",
+      "datasource": "Elasticsearch",
+      "targets": [
+        {
+          "refId": "A",
+          "bucketAggs": [
+            {
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": { "interval": "auto" }
+            }
+          ],
+          "metrics": [
+            { "type": "count", "field": "" }
+          ],
+          "query": "event_type:alert"
+        }
+      ],
+      "xaxis": { "mode": "time" }
+    },
+    {
+      "id": 2,
+      "title": "Top 10 Signatures",
+      "type": "table",
+      "datasource": "Elasticsearch",
+      "targets": [
+        {
+          "refId": "B",
+          "bucketAggs": [
+            {
+              "type": "terms",
+              "field": "alert.signature.keyword",
+              "settings": { "size": 10, "order": "desc" }
+            }
+          ],
+          "metrics": [
+            { "type": "count", "field": "" }
+          ],
+          "query": "event_type:alert"
+        }
+      ],
+      "columns": [
+        { "text": "Signature", "value": "alert.signature" },
+        { "text": "Count",     "value": "Count" }
+      ]
+    }
+  ]
+}

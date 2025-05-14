@@ -1,0 +1,86 @@
+version: '3.8'
+services:
+
+  # -------------------------
+  # Elasticsearch
+  # -------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - siem-net
+
+  # -------------------------
+  # Suricata
+  # -------------------------
+  suricata:
+    build:
+      context: ./suricata-docker
+    image: my-siem-suricata:latest
+    container_name: suricata
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
+      - suricata-logs:/var/log/suricata
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+  # -------------------------
+  # Filebeat
+  # -------------------------
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.7.0
+    container_name: filebeat
+    depends_on:
+      - suricata
+      - elasticsearch
+    volumes:
+      # монтируем config
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      # монтируем логи Suricata, чтобы Filebeat видел файл eve.json
+      - suricata-logs:/var/log/suricata:ro
+    networks:
+      - siem-net
+
+  # -------------------------
+  # Grafana
+  # -------------------------
+  grafana:
+      image: grafana/grafana-oss:9.4.7
+      container_name: grafana
+      ports:
+        - "3000:3000"
+      environment:
+        - GF_SECURITY_ADMIN_PASSWORD=secret
+      depends_on:
+        - elasticsearch
+      volumes:
+        - grafana-data:/var/lib/grafana
+        # provisioning для автоматической конфигурации
+        - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+        - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+        # сами JSON-дашборды
+        - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      networks:
+        - siem-net
+
+# Создаём docker volume для хранения данных Elasticsearch, Suricata и Grafana
+volumes:
+  es-data:
+  suricata-logs:
+  grafana-data:
+
+networks:
+  siem-net:
+    driver: bridge
