@@ -1,13 +1,30 @@
 filebeat.inputs:
-  - type: filestream
-    id: suricata-logs
+  # - type: filestream
+  #   id: suricata-logs
+  #   paths:
+  #     - /var/log/suricata/eve.json  # Путь внутри контейнера Filebeat (проброшенный volume из Suricata)
+  #   json.keys_under_root: true      # Говорим, что это JSON
+  #   json.add_error_key: true
+  #   fields:
+  #     suricata_source: suricata
+  #   fields_under_root: false
+  - type: log
+    enabled: true
     paths:
-      - /var/log/suricata/eve.json  # Путь внутри контейнера Filebeat (проброшенный volume из Suricata)
-    json.keys_under_root: true      # Говорим, что это JSON
-    json.add_error_key: true
-    fields:
-      suricata_source: suricata
-    fields_under_root: false
+      - /var/log/suricata/eve.json
+    json.keys_under_root: true          # put all the JSON keys at the top level
+    json.add_error_key: true            # in case a line isn’t valid JSON
+    json.overwrite_keys: true
+
+processors:
+  - decode_json_fields:
+      fields: ["message"]        # the field that holds your JSON blob
+      target: ""                 # empty = merge into the root
+      overwrite_keys: true       # replace “message.foo” if a root‐level foo exists
+      max_depth: 3
+      process_array: false
+      add_error_key: true
+
 
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
