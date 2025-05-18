@@ -18,27 +18,25 @@ filebeat.inputs:
 
 processors:
   - decode_json_fields:
-      fields: ["message"]        # the field that holds your JSON blob
-      target: ""                 # empty = merge into the root
-      overwrite_keys: true       # replace “message.foo” if a root‐level foo exists
-      max_depth: 3
-      process_array: false
+      fields: ["message"]
+      target: ""
+      overwrite_keys: true
       add_error_key: true
 
 
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
   index: "suricata-%{+yyyy.MM.dd}"
+  #pipeline: "suricata-geoip"
 
-setup.ilm.enabled: false  # можно включить, если хотите ILM (Lifecycle Management)
+setup.ilm.enabled: false
 
-# Опционально - включить вывод в stdout (для отладки)
 logging.to_files: false
 logging.to_stdout: true
 logging.level: info
 
 # ---------------------------------
-# Template settings (для кастомного index.name)
+# Template settings
 # ---------------------------------
 setup.template.name: "suricata"
 setup.template.pattern: "suricata-*"

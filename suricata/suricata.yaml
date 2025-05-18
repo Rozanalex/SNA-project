@@ -5,23 +5,47 @@ vars:
     HOME_NET: "[192.168.194.137/24]"
     EXTERNAL_NET: "! $HOME_NET"
   port-groups:
-    HTTP_PORTS: "80,443,8080,8000"
+    HTTP_PORTS: "80,443,8080,8000,3000"
+
+app-layer:
+  protocols:
+    dnp3:
+      detection-enabled: yes
+    modbus:
+      detection-enabled: yes
+
 
 default-rule-path: /etc/suricata/rules
 rule-files:
-  - emerging.rules
+  - app-layer-events.rules
+  - decoder-events.rules
+  - files.rules
+  - ftp-events.rules
+  - http-events.rules
+  - ipsec-events.rules
+  - kerberos-events.rules
+  - local.rules
+  - mqtt-events.rules
+  - nfs-events.rules
+  - ntp-events.rules
+  - quic-events.rules
+  - rfb-events.rules
+  - smb-events.rules
+  - smtp-events.rules
+  - ssh-events.rules
+  - stream-events.rules
+  - tls-events.rules
 
-# Пишем логи в формате EVE (json)
 outputs:
   - eve-log:
       enabled: yes
       filetype: regular
       filename: /var/log/suricata/eve.json
-      community-id: true        # Полезно для корреляции
+      community-id: true       
       community-id-seed: 0
       types:
         - alert:
-            metadata: yes       # Пример, можно выводить метаданные
+            metadata: yes      
         - dns
         - http
         - tls
@@ -30,17 +54,12 @@ outputs:
             totals: yes
             threads: yes
 
-# Настройки рабочих потоков, ring-buffer и т.д.
-# (оставим по умолчанию или оптимизируем при необходимости)
-
-# Настройки сетевых интерфейсов
 af-packet:
   - interface: ens33
     threads: 1
     defrag: yes
     cluster-type: cluster_flow
     cluster-id: 99
-    copy-mode: IPS
+    copy-mode: IDS
     buffer-size: 64535
 
-# Остальные параметры можно оставить дефолтными или подстроить

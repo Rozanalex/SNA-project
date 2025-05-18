@@ -11,6 +11,7 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
     volumes:
+      #- ./filebeat/GeoLite2-City.mmdb:/usr/share/elasticsearch/config/GeoLite2-City.mmdb:ro
       - es-data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
@@ -46,9 +47,8 @@ services:
       - elasticsearch
     command: filebeat -e -strict.perms=false
     volumes:
-      # монтируем config
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      # монтируем логи Suricata, чтобы Filebeat видел файл eve.json
+      #- ./filebeat/GeoLite2-City.mmdb:/usr/share/filebeat/GeoLite2-City.mmdb:r
       - suricata-logs:/var/log/suricata:ro
     networks:
       - siem-net
@@ -67,15 +67,12 @@ services:
         - elasticsearch
       volumes:
         - grafana-data:/var/lib/grafana
-        # provisioning для автоматической конфигурации
         - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
         - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-        # сами JSON-дашборды
         - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       networks:
         - siem-net
 
-# Создаём docker volume для хранения данных Elasticsearch, Suricata и Grafana
 volumes:
   es-data:
   suricata-logs:
